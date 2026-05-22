@@ -21,13 +21,13 @@ import {
 } from 'lucide-react'
 import {
   Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale,
-  LinearScale, BarElement, Title, LineElement, PointElement, Filler,
+  LinearScale, BarElement, BarController, Title, LineElement, PointElement, Filler,
 } from 'chart.js'
 import { Doughnut, Bar, Line } from 'react-chartjs-2'
 
 ChartJS.register(
   ArcElement, Tooltip, Legend, CategoryScale,
-  LinearScale, BarElement, Title, LineElement, PointElement, Filler,
+  LinearScale, BarElement, BarController, Title, LineElement, PointElement, Filler,
 )
 
 type Tab = 'overview' | 'map' | 'table' | 'kanban' | 'reports' | 'config' | 'usuarios'
@@ -800,7 +800,8 @@ function ReportsTab({ coloniaStats, streets }: { coloniaStats: ColoniaStats[]; s
       type Bucket = { muy_alta: number; alta: number; media: number; baja: number }
       const buckets: Map<string, Bucket> = new Map()
 
-      const getKey = (iso: string) => {
+      const getKey = (iso?: string) => {
+        if (!iso) return 'Sin fecha'
         const d = new Date(iso)
         if (isNaN(d.getTime())) return 'Sin fecha'
         const pad = (n: number) => n.toString().padStart(2, '0')
@@ -808,9 +809,11 @@ function ReportsTab({ coloniaStats, streets }: { coloniaStats: ColoniaStats[]; s
         return `${pad(d.getDate())} ${MESES[d.getMonth()]} ${d.getFullYear()}`
       }
 
-      const sorted = [...streets]
-        .filter(s => s.created_at)
-        .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+      const sorted = [...streets].sort((a, b) => {
+        const t1 = a.created_at ? new Date(a.created_at).getTime() : 0
+        const t2 = b.created_at ? new Date(b.created_at).getTime() : 0
+        return t1 - t2
+      })
 
       for (const s of sorted) {
         const key = getKey(s.created_at)
